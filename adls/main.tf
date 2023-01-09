@@ -11,9 +11,10 @@ resource "azurerm_storage_account" "sgaccount" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   is_hns_enabled           = "true"
+  allow_blob_public_access = "true"
 }
 
-resource "azurerm_storage_data_lake_gen2_filesystem" "example" {
+resource "azurerm_storage_data_lake_gen2_filesystem" "container" {
   name               = "stagingadls"
   storage_account_id = azurerm_storage_account.sgaccount.id
 
