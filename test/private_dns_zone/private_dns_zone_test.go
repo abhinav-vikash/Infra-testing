@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"testing"
 	"strings"
+	"log"
+	"context"
 
-	test "github.com/abhinav-vikash/Infra-testing/test"
+	// test "github.com/abhinav-vikash/Infra-testing/test"
 	"github.com/gruntwork-io/terratest/modules/terraform"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/privatedns/armprivatedns"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,6 +19,10 @@ func TestPrivateDNSzoneFunction(t *testing.T){
 	t.Parallel()
 
 	subscriptionId := "3344a922-f246-4f27-a6f1-3c85586f7b99"
+	resourceGroupName := "privatednsrg"
+	zoneName := "zoneName"
+	recordName := "ada-backstage"
+
 	terraformOptions := &terraform.Options{
 		// The path to where our Terraform code is located
 		TerraformDir: "../private_dns_zone",
@@ -36,8 +44,41 @@ func TestPrivateDNSzoneFunction(t *testing.T){
 	a_record_ip := terraform.Output(t, terraformOptions, "a_record_ip")
 	fully_qualified_domain_name := terraform.Output(t, terraformOptions, "fully_qualified_domain_name")
 	
-	dnsZone, err := test.getPrivateDNSZoneMetadata(subscriptionId, "privatednsrg", "adaprivatezone.com")
-	recordSet, err := test.getRecordSetZoneMetadata(subscriptionId, "privatednsrg", "adaprivatezone.com", "ada-backstage")
+	// dnsZone, err := test.getPrivateDNSZoneMetadata(subscriptionId, "privatednsrg", "adaprivatezone.com")
+	// recordSet, err := test.getRecordSetZoneMetadata(subscriptionId, "privatednsrg", "adaprivatezone.com", "ada-backstage")
+
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	privateZoneClient, err := armprivatedns.NewPrivateZonesClient(subscriptionId, cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	dnsZone, err := privateZoneClient.Get(ctx,
+		resourceGroupName,
+		zoneName,
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+
+	recordSetClient, err := armprivatedns.NewRecordSetsClient(subscriptionId, cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	
+	recordSet, err := recordSetClient.Get(ctx,
+		resourceGroupName,
+		zoneName,
+		armprivatedns.RecordTypeA,
+		recordName,
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+
 	recordSetProperties := *recordSet.Properties
 	record_ips := []string{}
 	for _, b := range recordSetProperties.ARecords {
