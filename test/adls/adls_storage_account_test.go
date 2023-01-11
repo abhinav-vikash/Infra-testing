@@ -1,15 +1,12 @@
-//go:build azure
-// +build azure
-
 // NOTE: We use build tags to differentiate azure testing because we currently do not have azure access setup for
 // CircleCI.
 
-package test
+package adls
 
 import (
 	"fmt"
 	// "strings"
-	"encoding/json"
+	// "encoding/json"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/azure"
@@ -60,10 +57,6 @@ func TestTerraformAzureStorageExample(t *testing.T) {
 	publicAccess,er := azure.GetStorageBlobContainerPublicAccessE(storageV2ContainerName, storageAccountName, resourceGroupName, subscriptionID)
 	assert.True(t, publicAccess, "storage container has public access")
 	fmt.Println(er)
-
-	account,er := azure.GetStorageAccountPropertyE(storageAccountName, resourceGroupName, subscriptionID)
-	result,rerr := json.Marshal(account)
-	fmt.Println(string(result.properties.allowBlobPublicAccess))
 
 	accountKind := azure.GetStorageAccountKind(t, storageAccountName, resourceGroupName, subscriptionID)
 	assert.Equal(t, storageAccountKind, accountKind, "storage account kind mismatch")
